@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} Posters</title> <!-- Dynamic page title based on the movie title -->
+    <style>
+        /* Style for the poster grid container */
+        .poster-grid {
+            display: flex;
+            flex-wrap: wrap; /* Allows the posters to wrap to the next line when the row is full */
+        }
+
+        /* Style for each poster item */
+        .poster-grid img {
+            max-width: 200px; /* Limit the maximum width of each poster */
+            margin: 10px;     /* Add space between each poster */
+            cursor: pointer;  /* Change the cursor to a pointer to indicate clickable images */
+        }
+    </style>
+</head>
+<body>
+    <!-- Page heading displaying which movie's posters are shown -->
+    <h1>Posters for {{ title }}</h1>
+
+    <!-- Flexible grid layout container for posters -->
+    <div class="poster-grid">
+        {% for poster in posters %}
+            <div class="poster-item">
+                <!-- Render each poster image with an onclick event to select it -->
+                <img src="{{ poster.url }}" alt="Poster" onclick="selectPoster('{{ title }}', '{{ poster.url }}')">
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Form to submit the selected poster and movie title -->
+    <form id="posterForm" method="POST" action="{{ url_for('select_poster') }}">
+        <!-- Hidden input to store the movie title -->
+        <input type="hidden" id="movieTitle" name="movie_title" value="">
+        <!-- Hidden input to store the selected poster's URL -->
+        <input type="hidden" id="posterUrl" name="poster_url" value="">
+    </form>
+
+    <script>
+        /* 
+           Function to handle poster selection.
+           - Sets the hidden form inputs for movie title and poster URL.
+           - Submits the form to the server.
+        */
+        function selectPoster(title, url) {
+            document.getElementById('movieTitle').value = title;  // Set the movie title in the form
+            document.getElementById('posterUrl').value = url;     // Set the poster URL in the form
+            document.getElementById('posterForm').submit();       // Submit the form
+        }
+    </script>
+</body>
+</html>

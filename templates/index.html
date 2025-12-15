@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Metadata and Bootstrap CSS for styling -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Movie Collection</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        /* General styling for the page */
+        body {
+            background-color: #343a40; /* Dark background */
+            color: #fff; /* Light text */
+        }
+        #wrapper {
+            display: flex;
+            width: 100%;
+        }
+        #sidebar-wrapper {
+            width: 250px;
+            background-color: #212529; /* Darker sidebar */
+            border-right: 1px solid #444;
+        }
+        .sidebar-heading {
+            padding: 1rem;
+            font-size: 1.5rem;
+            background-color: #1d2124;
+            text-align: center;
+        }
+        .list-group-item {
+            background-color: #212529;
+            color: #fff;
+            border: none;
+        }
+        .list-group-item:hover {
+            background-color: #343a40;
+        }
+        #page-content-wrapper {
+            flex-grow: 1;
+            padding: 20px;
+        }
+        .movie-grid {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .movie-card {
+            flex: 0 0 16.66%;
+            max-width: 16.66%;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        .movie-card img {
+            width: 100%;
+            height: auto;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        .movie-card h5 {
+            font-size: 1rem;
+            margin-top: 10px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .card {
+            background-color: #454d55; /* Darker cards */
+            border: none;
+            border-radius: 8px;
+        }
+        .card-body {
+            background-color: #6c757d; /* Light gray for card bodies */
+            padding: 1rem;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+<div id="wrapper">
+    <!-- Sidebar for navigation -->
+    <div class="bg-dark border-right" id="sidebar-wrapper">
+        <div class="sidebar-heading">My Media Collection</div>
+        <div class="list-group list-group-flush">
+            <!-- Navigation buttons for movies and TV shows -->
+            <button class="list-group-item list-group-item-action" onclick="window.location.assign('/')">Movies</button>
+            <button class="list-group-item list-group-item-action" onclick="location.href='/tv'">TV Shows</button>
+        </div>
+    </div>
+
+    <!-- Main content area -->
+    <div id="page-content-wrapper">
+        <div class="container-fluid">
+            <h1 class="my-4">Movie Collection</h1>
+
+            <!-- Input field for filtering movies -->
+            <input type="text" id="searchInput" placeholder="Filter Movies..." class="form-control">
+
+            <!-- Buttons for filtering and refreshing -->
+            <div class="btn-group mt-2 mb-4" role="group">
+                <button class="btn btn-primary" onclick="filterMoviesWithoutLogo()">Show Movies Without Logo</button>
+                <button onclick="location.href='/refresh'" class="btn btn-secondary">Refresh</button>
+            </div>
+
+            <!-- Grid for displaying movies -->
+            <div id="movieList" class="movie-grid">
+                {% for movie in movies %}
+                <div class="movie-card" id="{{ movie.clean_id }}" data-title="{{ movie.title | lower }}" data-has-logo="{{ movie.has_logo }}">
+                    <div>
+                        <!-- Display movie logo if available -->
+                        {% if movie.logo_thumb %}
+                        <img src="{{ movie.logo_thumb }}" alt="{{ movie.title }}" class="movie-logo" onclick="triggerSearch('{{ movie.title }}', 'movie')">
+                        {% elif movie.logo %}
+                        <img src="{{ movie.logo }}" alt="{{ movie.title }}" class="movie-logo" onclick="triggerSearch('{{ movie.title }}', 'movie')">
+                        {% else %}
+                        <!-- Placeholder for movies without logos -->
+                        <div class="img-thumbnail bg-light d-flex align-items-center justify-content-center" style="height: 300px;">
+                            <span>No Logo</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <!-- Movie title with clickable functionality -->
+                    <h5 class="mt-2 text-center" onclick="triggerSearch(`{{ movie.title }}`, 'movie')">{{ movie.title }}</h5>
+
+                    <!-- Display logo dimensions and last modified date -->
+                    <p class="text-center">
+                        <strong>Dimensions:</strong> {{ movie.logo_dimensions }} |
+                        <strong>Last Modified:</strong> {{ movie.logo_last_modified }}
+                    </p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Function to trigger search for a movie
+    function triggerSearch(title, contentType) {
+        // Clean the title by removing unwanted characters
+        const cleanTitle = title
+            .replace(/\(\d{4}\)/g, '') // Remove the year in parentheses
+            .replace(/[^a-zA-Z0-9\s]/g, '') // Remove all non-alphanumeric characters except spaces
+            .trim(); // Trim leading/trailing spaces
+
+        // Redirect with the cleaned title
+        window.location.href = `/search_${contentType}?query=${encodeURIComponent(cleanTitle.toLowerCase())}`;
+    }
+
+    // Filter movies based on search input
+    document.getElementById('searchInput').addEventListener('keyup', function() {
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        const movies = document.querySelectorAll('#movieList .movie-card');
+
+        movies.forEach(function(movie) {
+            const title = movie.getAttribute('data-title');
+            movie.style.display = title.includes(query) ? 'block' : 'none';
+        });
+    });
+
+    // Function to show movies without logos
+    function filterMoviesWithoutLogo() {
+        const movies = document.querySelectorAll('#movieList .movie-card');
+
+        movies.forEach(function(movie) {
+            const hasLogo = movie.getAttribute('data-has-logo').toLowerCase(); // Normalize to lowercase
+            console.log(`Movie: ${movie.getAttribute('data-title')}, Has Logo: ${hasLogo}`);
+
+            if (hasLogo === "true") {
+                movie.style.display = 'none';  // Hide movies with logos
+            } else {
+                movie.style.display = 'block';  // Show movies without logos
+            }
+        });
+    }
+
+    // Update the button's click event to call filterMoviesWithoutLogo
+    document.querySelector('.btn-primary').addEventListener('click', filterMoviesWithoutLogo);
+</script>
+</body>
+</html>
