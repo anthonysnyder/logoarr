@@ -105,9 +105,9 @@
                     <div>
                         <!-- Display the TV show's thumbnail or placeholder if none exists -->
                         {% if tv_show.logo_thumb %}
-                        <img src="{{ tv_show.logo_thumb }}" alt="{{ tv_show.title }}" class="movie-logo" onclick="triggerSearch('{{ tv_show.clean_title }}', 'tv')">
+                        <img src="{{ tv_show.logo_thumb }}" alt="{{ tv_show.title }}" class="movie-logo" onclick="triggerSearch('{{ tv_show.clean_title }}', 'tv', '{{ tv_show.title }}')">
                         {% elif tv_show.logo %}
-                        <img src="{{ tv_show.logo }}" alt="{{ tv_show.title }}" class="movie-logo" onclick="triggerSearch('{{ tv_show.clean_title }}', 'tv')">
+                        <img src="{{ tv_show.logo }}" alt="{{ tv_show.title }}" class="movie-logo" onclick="triggerSearch('{{ tv_show.clean_title }}', 'tv', '{{ tv_show.title }}')">
                         {% else %}
                         <div class="img-thumbnail bg-light d-flex align-items-center justify-content-center" style="height: 300px;">
                             <span>No Logo</span>
@@ -115,7 +115,7 @@
                         {% endif %}
                     </div>
                     <!-- Display the TV show's title and make it clickable -->
-                    <h5 class="mt-2 text-center" onclick="triggerSearch(`{{ tv_show.title }}`, 'tv')">{{ tv_show.title }}</h5>
+                    <h5 class="mt-2 text-center" onclick="triggerSearch(`{{ tv_show.title }}`, 'tv', `{{ tv_show.title }}`)">{{ tv_show.title }}</h5>
                     <!-- Display additional details like resolution and modification date -->
                     <p class="text-center">
                         <strong>Dimensions:</strong> {{ tv_show.logo_dimensions }} |
@@ -130,15 +130,15 @@
 
 <script>
     // Function to trigger search
-    function triggerSearch(title, contentType) {
+    function triggerSearch(title, contentType, directoryName) {
         // Clean title by removing year and special characters
         const cleanTitle = title
             .replace(/\(\d{4}\)/g, '') // Remove the year in parentheses
             .replace(/[^a-zA-Z0-9\s]/g, '') // Remove all non-alphanumeric characters except spaces
             .trim(); // Trim leading/trailing spaces
 
-        // Redirect with sanitized title
-        window.location.href = `/search_${contentType}?query=${encodeURIComponent(cleanTitle.toLowerCase())}`;
+        // Redirect with sanitized title AND the directory name
+        window.location.href = `/search_${contentType}?query=${encodeURIComponent(cleanTitle.toLowerCase())}&directory=${encodeURIComponent(directoryName)}`;
     }
 
     // Function to filter TV shows based on the search input

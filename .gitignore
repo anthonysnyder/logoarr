@@ -53,3 +53,9 @@ test_data/
 
 # Docker
 docker-compose.override.yml
+
+# TMDb directory mapping file (contains local paths)
+tmdb_directory_mapping.json
+
+# Test folders
+test_media/
