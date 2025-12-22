@@ -106,9 +106,9 @@
                     <div>
                         <!-- Display movie logo if available -->
                         {% if movie.logo_thumb %}
-                        <img src="{{ movie.logo_thumb }}" alt="{{ movie.title }}" class="movie-logo" onclick="triggerSearch('{{ movie.title }}', 'movie')">
+                        <img src="{{ movie.logo_thumb }}" alt="{{ movie.title }}" class="movie-logo" onclick="triggerSearch('{{ movie.title }}', 'movie', '{{ movie.title }}')">
                         {% elif movie.logo %}
-                        <img src="{{ movie.logo }}" alt="{{ movie.title }}" class="movie-logo" onclick="triggerSearch('{{ movie.title }}', 'movie')">
+                        <img src="{{ movie.logo }}" alt="{{ movie.title }}" class="movie-logo" onclick="triggerSearch('{{ movie.title }}', 'movie', '{{ movie.title }}')"
                         {% else %}
                         <!-- Placeholder for movies without logos -->
                         <div class="img-thumbnail bg-light d-flex align-items-center justify-content-center" style="height: 300px;">
@@ -117,7 +117,7 @@
                         {% endif %}
                     </div>
                     <!-- Movie title with clickable functionality -->
-                    <h5 class="mt-2 text-center" onclick="triggerSearch(`{{ movie.title }}`, 'movie')">{{ movie.title }}</h5>
+                    <h5 class="mt-2 text-center" onclick="triggerSearch(`{{ movie.title }}`, 'movie', `{{ movie.title }}`)">{{ movie.title }}</h5>
 
                     <!-- Display logo dimensions and last modified date -->
                     <p class="text-center">
@@ -133,15 +133,15 @@
 
 <script>
     // Function to trigger search for a movie
-    function triggerSearch(title, contentType) {
+    function triggerSearch(title, contentType, directoryName) {
         // Clean the title by removing unwanted characters
         const cleanTitle = title
             .replace(/\(\d{4}\)/g, '') // Remove the year in parentheses
             .replace(/[^a-zA-Z0-9\s]/g, '') // Remove all non-alphanumeric characters except spaces
             .trim(); // Trim leading/trailing spaces
 
-        // Redirect with the cleaned title
-        window.location.href = `/search_${contentType}?query=${encodeURIComponent(cleanTitle.toLowerCase())}`;
+        // Redirect with the cleaned title AND the directory name
+        window.location.href = `/search_${contentType}?query=${encodeURIComponent(cleanTitle.toLowerCase())}&directory=${encodeURIComponent(directoryName)}`;
     }
 
     // Filter movies based on search input
