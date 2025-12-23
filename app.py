@@ -27,8 +27,8 @@ POSTER_BASE_URL = "https://image.tmdb.org/t/p/original"
 
 # Define base folders for organizing movies and TV shows
 # Configure these via Docker volumes or environment variables
-movie_folders = ["/movies", "/kids-movies", "/movies2", "/kids-movies2"]
-tv_folders = ["/tv", "/kids-tv", "/tv2", "/kids-tv2"]  # Multiple folders for flexibility
+movie_folders = ["/movies", "/kids-movies", "/anime"]
+tv_folders = ["/tv", "/kids-tv"]  # Multiple folders for flexibility
 
 # Path to the mapping file that stores TMDb ID -> Directory relationships
 MAPPING_FILE = os.path.join(os.path.dirname(__file__), 'tmdb_directory_mapping.json')
