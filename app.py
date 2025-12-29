@@ -4,7 +4,7 @@ import re
 import urllib.parse
 import json
 import time
-from flask import Flask, render_template, request, redirect, url_for, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, send_from_directory, send_file, Response
 from difflib import get_close_matches, SequenceMatcher  # For string similarity
 from PIL import Image  # For image processing
 from datetime import datetime  # For handling dates and times
@@ -25,6 +25,23 @@ def safe_listdir(path: str, retries: int = 8, base_delay: float = 0.05):
             time.sleep(base_delay * (2 ** attempt))
     return []  # degrade gracefully, never 500
 
+# SMB-safe file reading helper
+def safe_send_file(path: str, retries: int = 8, base_delay: float = 0.05, **kwargs):
+    """
+    Safely send a file with retry logic for SMB mounts.
+    Handles BlockingIOError by retrying with exponential backoff.
+    """
+    last_exc = None
+    for attempt in range(retries):
+        try:
+            return send_file(path, **kwargs)
+        except BlockingIOError as e:
+            last_exc = e
+            if attempt < retries - 1:  # Don't sleep on the last attempt
+                time.sleep(base_delay * (2 ** attempt))
+    # If all retries fail, raise the last exception
+    raise last_exc
+
 # Initialize Flask application for managing movie and TV show posters
 app = Flask(__name__)
 
@@ -42,9 +59,17 @@ BASE_URL = "https://api.themoviedb.org/3"
 POSTER_BASE_URL = "https://image.tmdb.org/t/p/original"
 
 # Define base folders for organizing movies and TV shows
-# Configure these via Docker volumes or environment variables
-movie_folders = ["/movies", "/kids-movies", "/movies2", "/kids-movies2"]
-tv_folders = ["/tv", "/kids-tv", "/tv2", "/kids-tv2"]  # Multiple folders for flexibility
+# Environment variables allow flexible folder configuration without code changes
+movie_folders_env = os.getenv('MOVIE_FOLDERS', '/movies,/kids-movies')
+tv_folders_env = os.getenv('TV_FOLDERS', '/tv,/kids-tv')
+
+# Parse comma-separated folder lists and filter out non-existent paths
+movie_folders = [folder.strip() for folder in movie_folders_env.split(',') if folder.strip() and os.path.exists(folder.strip())]
+tv_folders = [folder.strip() for folder in tv_folders_env.split(',') if folder.strip() and os.path.exists(folder.strip())]
+
+# Log the folders being used for verification
+app.logger.info(f"Movie folders: {movie_folders}")
+app.logger.info(f"TV folders: {tv_folders}")
 
 # Path to the mapping file that stores TMDb ID -> Directory relationships
 MAPPING_FILE = os.path.join(os.path.dirname(__file__), 'tmdb_directory_mapping.json')
@@ -526,8 +551,9 @@ def serve_logo(filename):
         if '@eaDir' in full_path:
             continue
         if os.path.exists(full_path):
-            # Serve the file from the appropriate directory
-            response = send_from_directory(base_folder, filename)
+            # Serve the file from the appropriate directory using safe_send_file
+            # to handle BlockingIOError on SMB mounts
+            response = safe_send_file(full_path)
             if refresh == 'true':
                 # If refresh is requested, set no-cache headers
                 response.cache_control.no_cache = True
