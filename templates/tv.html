@@ -40,18 +40,14 @@
             padding: 20px;
         }
         .movie-grid {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 10px;
-            padding: 10px 0;
-            grid-auto-rows: 1fr;
+            display: flex;
+            flex-wrap: wrap;
         }
         .movie-card {
+            flex: 0 0 16.66%;
+            max-width: 16.66%;
             padding: 10px;
             box-sizing: border-box;
-            display: grid;
-            grid-template-rows: 200px auto auto;
-            align-content: start;
         }
         .movie-card > div {
             height: 200px;
@@ -70,21 +66,20 @@
         }
         .movie-card .img-thumbnail {
             height: 100%;
+            width: 100%;
             margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .movie-card h5 {
             font-size: 1rem;
             margin-top: 10px;
             text-align: center;
             cursor: pointer;
-            min-height: 2.5em;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
         .movie-card p {
             font-size: 0.85rem;
-            min-height: 2.5em;
         }
         .card {
             background-color: #454d55; /* Darker cards */
@@ -173,7 +168,7 @@
 
         tvShows.forEach(function(tvShow) {
             const title = tvShow.getAttribute('data-title');
-            tvShow.style.display = title.includes(query) ? 'grid' : 'none';
+            tvShow.style.display = title.includes(query) ? 'block' : 'none';
         });
     });
 
@@ -188,7 +183,7 @@
             if (hasLogo === "true") {
                 tvShow.style.display = 'none';  // Hide TV shows with logos
             } else {
-                tvShow.style.display = 'grid';  // Show TV shows without logos
+                tvShow.style.display = 'block';  // Show TV shows without logos
             }
         });
     }
