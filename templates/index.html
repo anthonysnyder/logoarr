@@ -44,12 +44,14 @@
             grid-template-columns: repeat(6, 1fr);
             gap: 10px;
             padding: 10px 0;
+            grid-auto-rows: 1fr;
         }
         .movie-card {
             padding: 10px;
             box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-rows: 200px auto auto;
+            align-content: start;
         }
         .movie-card > div {
             height: 200px;
@@ -174,7 +176,7 @@
 
         movies.forEach(function(movie) {
             const title = movie.getAttribute('data-title');
-            movie.style.display = title.includes(query) ? 'block' : 'none';
+            movie.style.display = title.includes(query) ? 'grid' : 'none';
         });
     });
 
@@ -189,7 +191,7 @@
             if (hasLogo === "true") {
                 movie.style.display = 'none';  // Hide movies with logos
             } else {
-                movie.style.display = 'block';  // Show movies without logos
+                movie.style.display = 'grid';  // Show movies without logos
             }
         });
     }
