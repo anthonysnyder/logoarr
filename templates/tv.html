@@ -129,7 +129,7 @@
                         {% elif tv_show.logo %}
                         <img src="{{ tv_show.logo }}" alt="{{ tv_show.title }}" class="movie-logo" onclick="triggerSearch('{{ tv_show.clean_title }}', 'tv', '{{ tv_show.title }}')">
                         {% else %}
-                        <div class="img-thumbnail bg-light d-flex align-items-center justify-content-center" style="height: 300px;">
+                        <div class="img-thumbnail bg-light d-flex align-items-center justify-content-center">
                             <span>No Logo</span>
                         </div>
                         {% endif %}

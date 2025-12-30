@@ -128,10 +128,10 @@
                         {% if movie.logo_thumb %}
                         <img src="{{ movie.logo_thumb }}" alt="{{ movie.title }}" class="movie-logo" onclick="triggerSearch('{{ movie.title }}', 'movie', '{{ movie.title }}')">
                         {% elif movie.logo %}
-                        <img src="{{ movie.logo }}" alt="{{ movie.title }}" class="movie-logo" onclick="triggerSearch('{{ movie.title }}', 'movie', '{{ movie.title }}')"
+                        <img src="{{ movie.logo }}" alt="{{ movie.title }}" class="movie-logo" onclick="triggerSearch('{{ movie.title }}', 'movie', '{{ movie.title }}')">
                         {% else %}
                         <!-- Placeholder for movies without logos -->
-                        <div class="img-thumbnail bg-light d-flex align-items-center justify-content-center" style="height: 300px;">
+                        <div class="img-thumbnail bg-light d-flex align-items-center justify-content-center">
                             <span>No Logo</span>
                         </div>
                         {% endif %}
