@@ -170,6 +170,20 @@
 
     // Update the button's click event to call filterTVShowsWithoutLogo
     document.querySelector('.btn-primary').addEventListener('click', filterTVShowsWithoutLogo);
+
+    // Scroll to the TV show entry if URL contains a hash (after selecting a logo)
+    window.addEventListener('load', function() {
+        if (window.location.hash) {
+            const targetId = window.location.hash.substring(1);
+            const targetElement = document.getElementById(targetId);
+            if (targetElement) {
+                // Wait for images to load before scrolling
+                setTimeout(function() {
+                    targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
+            }
+        }
+    });
 </script>
 </body>
 </html>
