@@ -121,7 +121,7 @@
             <!-- Grid to display TV shows -->
             <div id="tvList" class="movie-grid">
                 {% for tv_show in tv_shows %}
-                <div class="movie-card" id="{{ tv_show.clean_id }}" data-title="{{ tv_show.title | lower }}" data-has-logo="{{ tv_show.has_logo | lower }}">
+                <div class="movie-card" id="{{ tv_show.clean_id }}" data-title="{{ tv_show.title | lower }}" data-has-logo="{{ tv_show.has_logo | lower }}" data-unavailable="{{ tv_show.unavailable }}">
                     <div>
                         <!-- Display the TV show's thumbnail or placeholder if none exists -->
                         {% if tv_show.logo_thumb %}
@@ -141,6 +141,17 @@
                         <strong>Dimensions:</strong> {{ tv_show.logo_dimensions }} |
                         <strong>Last Modified:</strong> {{ tv_show.logo_last_modified }}
                     </p>
+
+                    <!-- Button to mark as unavailable -->
+                    {% if not tv_show.has_logo %}
+                    <form method="POST" action="/toggle_unavailable" style="text-align: center; margin-top: 5px;">
+                        <input type="hidden" name="media_title" value="{{ tv_show.title }}">
+                        <input type="hidden" name="media_type" value="tv">
+                        <button type="submit" class="btn btn-sm {% if tv_show.unavailable %}btn-warning{% else %}btn-outline-secondary{% endif %}">
+                            {% if tv_show.unavailable %}Unavailable{% else %}Mark Unavailable{% endif %}
+                        </button>
+                    </form>
+                    {% endif %}
                 </div>
                 {% endfor %}
             </div>
@@ -178,12 +189,15 @@
 
         tvShows.forEach(function(tvShow) {
             const hasLogo = tvShow.getAttribute('data-has-logo').toLowerCase(); // Normalize to lowercase
-            console.log(`TV Show: ${tvShow.getAttribute('data-title')}, Has Logo: ${hasLogo}`);
+            const unavailable = tvShow.getAttribute('data-unavailable').toLowerCase(); // Check if marked unavailable
+            console.log(`TV Show: ${tvShow.getAttribute('data-title')}, Has Logo: ${hasLogo}, Unavailable: ${unavailable}`);
 
             if (hasLogo === "true") {
                 tvShow.style.display = 'none';  // Hide TV shows with logos
+            } else if (unavailable === "true") {
+                tvShow.style.display = 'none';  // Hide TV shows marked as unavailable
             } else {
-                tvShow.style.display = 'block';  // Show TV shows without logos
+                tvShow.style.display = 'block';  // Show TV shows without logos and not unavailable
             }
         });
     }
