@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  logoarr:
+    build: .
+    container_name: logoarr
+    ports:
+      - "5001:5000"
+    environment:
+      - TMDB_API_KEY=${TMDB_API_KEY}
+      - MOVIE_FOLDERS=/movies,/kids-movies
+      - TV_FOLDERS=/tv,/kids-tv,/anime
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL:-}
+    volumes:
+      # Use your Automounter path on the Mac
+      - /Volumes/UNAS_Data/Media/Movies:/movies
+      - /Volumes/UNAS_Data/Media/Kids Movies:/kids-movies
+      - /Volumes/UNAS_Data/Media/TV Shows:/tv
+      - /Volumes/UNAS_Data/Media/Kids TV:/kids-tv
+      - /Volumes/UNAS_Data/Media/Anime:/anime
+      # Local storage for TMDb mappings
+      - ./tmdb_directory_mapping.json:/app/tmdb_directory_mapping.json
+    restart: unless-stopped

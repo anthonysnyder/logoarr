@@ -11,10 +11,11 @@ from datetime import datetime  # For handling dates and times
 from urllib.parse import unquote
 
 # SMB-safe directory listing helper
-def safe_listdir(path: str, retries: int = 8, base_delay: float = 0.05):
+def safe_listdir(path: str, retries: int = 15, base_delay: float = 0.1):
     """
     Safely list directory contents with retry logic for SMB mounts.
-    Degrades gracefully on BlockingIOError instead of raising 500 errors.
+    Retries up to 15 times with exponential backoff.
+    Raises error if all retries fail to alert user of mount issues.
     """
     last_exc = None
     for attempt in range(retries):
@@ -22,11 +23,16 @@ def safe_listdir(path: str, retries: int = 8, base_delay: float = 0.05):
             return os.listdir(path)
         except BlockingIOError as e:
             last_exc = e
-            time.sleep(base_delay * (2 ** attempt))
-    return []  # degrade gracefully, never 500
+            app.logger.warning(f"BlockingIOError on attempt {attempt + 1}/{retries} for {path}")
+            if attempt < retries - 1:  # Don't sleep on last attempt
+                time.sleep(base_delay * (2 ** attempt))
+
+    # If all retries fail, raise the error so user sees something instead of blank page
+    app.logger.error(f"Failed to list {path} after {retries} retries: {last_exc}")
+    raise IOError(f"Unable to access {path} after {retries} retries. SMB mount may be unavailable.") from last_exc
 
 # SMB-safe file reading helper
-def safe_send_file(path: str, retries: int = 8, base_delay: float = 0.05, **kwargs):
+def safe_send_file(path: str, retries: int = 15, base_delay: float = 0.1, **kwargs):
     """
     Safely send a file with retry logic for SMB mounts.
     Handles BlockingIOError by retrying with exponential backoff.
@@ -37,10 +43,13 @@ def safe_send_file(path: str, retries: int = 8, base_delay: float = 0.05, **kwar
             return send_file(path, **kwargs)
         except BlockingIOError as e:
             last_exc = e
+            app.logger.warning(f"BlockingIOError sending file {path} on attempt {attempt + 1}/{retries}")
             if attempt < retries - 1:  # Don't sleep on the last attempt
                 time.sleep(base_delay * (2 ** attempt))
-    # If all retries fail, raise the last exception
-    raise last_exc
+
+    # If all retries fail, raise the error with context
+    app.logger.error(f"Failed to send file {path} after {retries} retries: {last_exc}")
+    raise IOError(f"Unable to read {path} after {retries} retries. SMB mount may be unavailable.") from last_exc
 
 # Initialize Flask application for managing movie and TV show posters
 app = Flask(__name__)
@@ -659,6 +668,20 @@ def send_slack_notification(message, local_logo_path, logo_url):
 @app.route('/refresh')
 def refresh_page():
     return redirect(url_for('index', refresh='true'))
+
+# Error handler for IOError (SMB mount issues)
+@app.errorhandler(IOError)
+def handle_io_error(error):
+    """Handle IOError gracefully with a user-friendly error page"""
+    app.logger.error(f"IOError caught: {error}")
+    return render_template('error.html', error_message=str(error)), 503
+
+# Error handler for generic 500 errors
+@app.errorhandler(500)
+def handle_500_error(error):
+    """Handle internal server errors"""
+    app.logger.error(f"500 error: {error}")
+    return render_template('error.html', error_message="An internal server error occurred. Please try again."), 500
 
 # Main entry point for running the Flask application
 if __name__ == '__main__':
