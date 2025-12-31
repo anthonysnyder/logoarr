@@ -83,6 +83,9 @@ app.logger.info(f"TV folders: {tv_folders}")
 # Path to the mapping file that stores TMDb ID -> Directory relationships
 MAPPING_FILE = os.path.join(os.path.dirname(__file__), 'tmdb_directory_mapping.json')
 
+# Path to the file that stores unavailable logos
+UNAVAILABLE_FILE = os.path.join(os.path.dirname(__file__), 'unavailable_logos.json')
+
 # Function to normalize movie/TV show titles for consistent searching and comparison
 def normalize_title(title):
     # Remove all non-alphanumeric characters and convert to lowercase
@@ -147,8 +150,37 @@ def save_mapped_directory(tmdb_id, media_type, directory_path):
     save_directory_mapping(mapping)
     app.logger.info(f"Saved new mapping: {key} -> {directory_path}")
 
+# Function to load the unavailable logos list from disk
+def load_unavailable_logos():
+    """Load the list of media titles marked as having no logo available"""
+    if os.path.exists(UNAVAILABLE_FILE):
+        try:
+            with open(UNAVAILABLE_FILE, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            app.logger.error(f"Error loading unavailable logos file: {e}")
+            return {"movies": [], "tv": []}
+    return {"movies": [], "tv": []}
+
+# Function to save the unavailable logos list to disk
+def save_unavailable_logos(unavailable_data):
+    """Save the list of media titles marked as having no logo available"""
+    try:
+        with open(UNAVAILABLE_FILE, 'w') as f:
+            json.dump(unavailable_data, f, indent=2)
+        app.logger.info(f"Saved unavailable logos to {UNAVAILABLE_FILE}")
+    except Exception as e:
+        app.logger.error(f"Error saving unavailable logos file: {e}")
+
+# Function to check if a media title is marked as unavailable
+def is_logo_unavailable(media_title, media_type):
+    """Check if a media title is marked as having no logo available"""
+    unavailable_data = load_unavailable_logos()
+    key = "movies" if media_type == "movie" else "tv"
+    return media_title in unavailable_data.get(key, [])
+
 # Function to retrieve media directories and their associated logo thumbnails
-def get_logo_thumbnails(base_folders=None):
+def get_logo_thumbnails(base_folders=None, media_type='movie'):
     # Default to movie folders if no folders specified
     if base_folders is None:
         base_folders = movie_folders
@@ -192,6 +224,9 @@ def get_logo_thumbnails(base_folders=None):
                         logo_last_modified = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d')
                         break
 
+                # Check if this media is marked as unavailable
+                unavailable = is_logo_unavailable(media_dir, media_type)
+
                 # Generate a clean ID for HTML anchor and URL purposes
                 clean_id = generate_clean_id(media_dir)
                 media_list.append({
@@ -201,7 +236,8 @@ def get_logo_thumbnails(base_folders=None):
                     'logo_dimensions': logo_dimensions,
                     'logo_last_modified': logo_last_modified,
                     'clean_id': clean_id,
-                    'has_logo': bool(logo_thumb)
+                    'has_logo': bool(logo_thumb),
+                    'unavailable': unavailable
                 })
 
     # Sort media list, ignoring leading "The" for more natural sorting
@@ -211,7 +247,7 @@ def get_logo_thumbnails(base_folders=None):
 # Route for the main index page showing movie logos
 @app.route('/')
 def index():
-    movies, total_movies = get_logo_thumbnails(movie_folders)
+    movies, total_movies = get_logo_thumbnails(movie_folders, 'movie')
 
     # Render the index page with movie thumbnails and total count
     return render_template('index.html', movies=movies, total_movies=total_movies)
@@ -219,7 +255,7 @@ def index():
 # Route for TV shows page
 @app.route('/tv')
 def tv_shows():
-    tv_shows, total_tv_shows = get_logo_thumbnails(tv_folders)
+    tv_shows, total_tv_shows = get_logo_thumbnails(tv_folders, 'tv')
 
     # Log TV shows data for debugging
     app.logger.info(f"Fetched TV shows: {tv_shows}")
@@ -668,6 +704,39 @@ def send_slack_notification(message, local_logo_path, logo_url):
 @app.route('/refresh')
 def refresh_page():
     return redirect(url_for('index', refresh='true'))
+
+# Route for marking/unmarking media as unavailable for logos
+@app.route('/toggle_unavailable', methods=['POST'])
+def toggle_unavailable():
+    # Get media title and type from the request
+    media_title = request.form.get('media_title')
+    media_type = request.form.get('media_type', 'movie')
+
+    if not media_title:
+        return "Bad Request: Missing media_title", 400
+
+    # Load current unavailable data
+    unavailable_data = load_unavailable_logos()
+    key = "movies" if media_type == "movie" else "tv"
+
+    # Toggle the unavailable status
+    if media_title in unavailable_data.get(key, []):
+        # Remove from unavailable list
+        unavailable_data[key].remove(media_title)
+        app.logger.info(f"Removed '{media_title}' from unavailable {key}")
+    else:
+        # Add to unavailable list
+        if key not in unavailable_data:
+            unavailable_data[key] = []
+        unavailable_data[key].append(media_title)
+        app.logger.info(f"Added '{media_title}' to unavailable {key}")
+
+    # Save the updated list
+    save_unavailable_logos(unavailable_data)
+
+    # Redirect back to the appropriate page
+    redirect_url = url_for('index') if media_type == 'movie' else url_for('tv_shows')
+    return redirect(f"{redirect_url}#{generate_clean_id(media_title)}")
 
 # Error handler for IOError (SMB mount issues)
 @app.errorhandler(IOError)

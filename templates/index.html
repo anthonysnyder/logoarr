@@ -122,7 +122,7 @@
             <!-- Grid for displaying movies -->
             <div id="movieList" class="movie-grid">
                 {% for movie in movies %}
-                <div class="movie-card" id="{{ movie.clean_id }}" data-title="{{ movie.title | lower }}" data-has-logo="{{ movie.has_logo }}">
+                <div class="movie-card" id="{{ movie.clean_id }}" data-title="{{ movie.title | lower }}" data-has-logo="{{ movie.has_logo }}" data-unavailable="{{ movie.unavailable }}">
                     <div>
                         <!-- Display movie logo if available -->
                         {% if movie.logo_thumb %}
@@ -144,6 +144,17 @@
                         <strong>Dimensions:</strong> {{ movie.logo_dimensions }} |
                         <strong>Last Modified:</strong> {{ movie.logo_last_modified }}
                     </p>
+
+                    <!-- Button to mark as unavailable -->
+                    {% if not movie.has_logo %}
+                    <form method="POST" action="/toggle_unavailable" style="text-align: center; margin-top: 5px;">
+                        <input type="hidden" name="media_title" value="{{ movie.title }}">
+                        <input type="hidden" name="media_type" value="movie">
+                        <button type="submit" class="btn btn-sm {% if movie.unavailable %}btn-warning{% else %}btn-outline-secondary{% endif %}">
+                            {% if movie.unavailable %}Unavailable{% else %}Mark Unavailable{% endif %}
+                        </button>
+                    </form>
+                    {% endif %}
                 </div>
                 {% endfor %}
             </div>
@@ -181,12 +192,15 @@
 
         movies.forEach(function(movie) {
             const hasLogo = movie.getAttribute('data-has-logo').toLowerCase(); // Normalize to lowercase
-            console.log(`Movie: ${movie.getAttribute('data-title')}, Has Logo: ${hasLogo}`);
+            const unavailable = movie.getAttribute('data-unavailable').toLowerCase(); // Check if marked unavailable
+            console.log(`Movie: ${movie.getAttribute('data-title')}, Has Logo: ${hasLogo}, Unavailable: ${unavailable}`);
 
             if (hasLogo === "true") {
                 movie.style.display = 'none';  // Hide movies with logos
+            } else if (unavailable === "true") {
+                movie.style.display = 'none';  // Hide movies marked as unavailable
             } else {
-                movie.style.display = 'block';  // Show movies without logos
+                movie.style.display = 'block';  // Show movies without logos and not unavailable
             }
         });
     }
